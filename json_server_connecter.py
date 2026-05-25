@@ -4,24 +4,35 @@ import webbrowser
 
 RAW_URL = "https://raw.githubusercontent.com/N1oGey/Json-servers/refs/heads/main/link_opener.json"
 
-last_version = -1
+def get_data():
+    r = requests.get(RAW_URL, timeout=10)
+    r.raise_for_status()
+    return r.json()
 
-while True:
+def main():
     try:
-        r = requests.get(RAW_URL, timeout=10)
-        r.raise_for_status()
-
-        data = r.json()
-
-        url = data.get("url", "")
-        version = int(data.get("version", 0))
-
-        if url and version != last_version:
-            print("OPEN:", url)
-            webbrowser.open(url)
-            last_version = version
-
+        start_data = get_data()
+        last_version = int(start_data.get("version", 0))
+        print("Listener started. Current version:", last_version)
     except Exception as e:
-        print("ERROR:", e)
+        print("Startup ERROR:", e)
+        return
 
-    time.sleep(3)
+    while True:
+        try:
+            data = get_data()
+            version = int(data.get("version", 0))
+            url = data.get("url", "").strip()
+
+            if version > last_version and url:
+                print("NEW URL:", url)
+                webbrowser.open_new_tab(url)
+                last_version = version
+
+        except Exception as e:
+            print("ERROR:", e)
+
+        time.sleep(2)
+
+if __name__ == "__main__":
+    main()
